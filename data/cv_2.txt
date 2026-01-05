@@ -1,0 +1,10 @@
+Name: Sofia Berg
+
+Experience
+Frontend Developer | 2021–2024
+Worked in a fully remote international team across multiple time zones.
+Developed responsive user interfaces using React and Tailwind CSS.
+Collaborated via Slack and Zoom to maintain a high-quality remote work culture.
+
+Skills
+React, JavaScript (ES6+), CSS3, Tailwind, Git

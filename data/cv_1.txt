@@ -1,0 +1,10 @@
+Name: Erik Lindström
+
+Experience
+Senior Software Engineer | 2018–2025
+Led a cross-functional team of 8 developers in a fast-paced environment.
+Architected scalable web applications using React and Node.js.
+Implemented high-level leadership strategies to improve sprint velocity.
+
+Skills
+React, Node.js, PostgreSQL, Leadership, Agile

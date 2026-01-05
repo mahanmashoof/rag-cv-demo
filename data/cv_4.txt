@@ -1,0 +1,10 @@
+Name: Maja Nilsson
+
+Experience
+Junior Web Developer | 2022–2024
+Built interactive components and reusable hooks using React.
+Collaborated with designers to translate Figma mockups into functional code.
+Focused on performance optimization for React-based single-page applications.
+
+Skills
+React, HTML5, TypeScript, Figma, SASS

@@ -1,0 +1,10 @@
+Name: Oscar Ek
+
+Experience
+Fullstack Consultant | 2019–2024
+Functioned as a Tech Lead, providing leadership and technical direction for clients.
+Maintained a 100% remote schedule while delivering high-impact software solutions.
+Mentored junior engineers on best practices for remote collaboration and React code quality.
+
+Skills
+Python, React, AWS, Leadership, Remote Collaboration
