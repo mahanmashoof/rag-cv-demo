@@ -1,6 +1,7 @@
 import chromadb
 # 'from module import name' imports specific items from a module
 from questions import DEMO_QUESTIONS  # Import the DEMO_QUESTIONS list
+from answer import answer_question  # Import the answer_question function
 
 # -----------------------------
 # Setup persistent Chroma client
@@ -54,6 +55,15 @@ for question in DEMO_QUESTIONS:
     # [0] accesses first element of the list
     documents = results["documents"][0]
     metadatas = results["metadatas"][0]
+
+    # Generate answer using retrieved documents
+    answer = answer_question(question, documents)
+    print("\nANSWER:")
+    print(answer)
+
+    print("\nSOURCES:")
+    for meta in metadatas:
+        print("-", meta["source"])
 
     # enumerate() returns both index and value
     # zip() pairs elements from two lists together
