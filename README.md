@@ -6,18 +6,17 @@ A simple Retrieval-Augmented Generation (RAG) system for searching CV/resume doc
 
 ### ingest.py
 
-Loads CV text files from the `data/` folder, generates embeddings using OpenAI's `text-embedding-3-small` model, and stores them in a ChromaDB vector database for semantic search.
+Loads CV text files from the `data/` folder and stores them in a ChromaDB vector database. Uses ChromaDB's default embedding function for semantic search.
 
 ### retrieve.py
 
-Queries the vector database with natural language questions (e.g., "Who has experience with React?"), retrieves the most semantically similar CV documents, and displays the results with source information.
+Queries the vector database with natural language questions and retrieves the most semantically similar CV documents. Runs through a set of demo questions defined in `questions.py` and displays results with source information.
 
 ## Usage
 
 1. Run `python ingest.py` to index the CVs
-2. Run `python retrieve.py` to search the indexed documents
+2. Run `python retrieve.py` to run demo queries against the indexed documents
 
 ## Requirements
 
-- OpenAI API key (set in `.env`)
-- Python packages: `openai`, `chromadb`
+- Python packages: `chromadb`
