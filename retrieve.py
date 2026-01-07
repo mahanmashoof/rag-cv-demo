@@ -1,77 +1,147 @@
 import chromadb
-# 'from module import name' imports specific items from a module
-from questions import DEMO_QUESTIONS  # Import the DEMO_QUESTIONS list
-from answer import answer_question  # Import the answer_question function
+from openai import OpenAI
 
-# -----------------------------
-# Setup persistent Chroma client
-# -----------------------------
+# -------------------------
+# Setup
+# -------------------------
+EMBEDDING_MODEL = "text-embedding-3-small"
+openai_client = OpenAI()
 chroma = chromadb.PersistentClient(path="./chroma_db")
-# Get existing collection (unlike get_or_create, this will error if not found)
 collection = chroma.get_collection(name="cvs")
+# Confidence thresholds (lower distance = better)
+HIGH_CONFIDENCE = 0.9
+MEDIUM_CONFIDENCE = 1.1
+
+# -------------------------
+# Confidence logic
+# -------------------------
+
+def embed_text(text: str) -> list[float]:
+    """
+    Converts text into a vector embedding.
+    This MUST be the same model used during ingestion.
+    """
+
+    response = openai_client.embeddings.create(
+        model=EMBEDDING_MODEL,
+        input=text
+    )
+
+    return response.data[0].embedding
+
+def calculate_confidence(distances: list[float]) -> str:
+    """
+    Converts vector distances into a human-readable confidence level.
+    Uses the BEST (lowest) distance only.
+    """
+
+    if not distances:
+        return "None"
+
+    best_distance = min(distances)
+
+    if best_distance <= HIGH_CONFIDENCE:
+        return "High"
+    elif best_distance <= MEDIUM_CONFIDENCE:
+        return "Medium"
+    else:
+        return "Low"
 
 
-# Type hints: Specify expected types (question: str, k: int)
-# Default parameter: k=3 means k is optional and defaults to 3
+# -------------------------
+# Retrieval
+# -------------------------
+
 def retrieve(question: str, k: int = 3):
     """
-    Docstring: Multi-line string describing the function.
-    Triple quotes allow strings to span multiple lines.
-
-    Args:
-        question: Natural language question
-        k: Number of results to return
-
-    Returns:
-        List of retrieved documents with metadata
+    Retrieves top-k relevant chunks from Chroma.
+    Returns documents + confidence.
     """
-    # Call the query method and store returned value
+
+    query_embedding = embed_text(question)
+
     results = collection.query(
-        # List with one element: [question]
-        query_texts=[question],
-        # Named argument with variable value
+        query_embeddings=[query_embedding],
         n_results=k
     )
 
-    return results
-
-
-# -----------------------------
-# Run demo questions
-# -----------------------------
-# For loop: Iterate through each item in DEMO_QUESTIONS list
-for question in DEMO_QUESTIONS:
-    # String concatenation with + operator
-    # "\n" is newline character, "*" repeats strings
-    print("\n" + "=" * 60)  # Prints 60 equal signs
-    # f-string: Embed variables directly in strings
-    print(f"QUESTION: {question}")
-    print("-" * 60)  # Prints 60 dashes
-
-    # Function call with argument
-    results = retrieve(question)
-
-    # Dictionary access: results["key"] gets value for that key
-    # [0] accesses first element of the list
     documents = results["documents"][0]
     metadatas = results["metadatas"][0]
+    distances = results["distances"][0]
 
-    # Generate answer using retrieved documents
-    answer = answer_question(question, documents)
+    confidence = calculate_confidence(distances)
+
+    return documents, metadatas, confidence
+
+
+# -------------------------
+# Answer generation (LLM)
+# -------------------------
+
+def generate_answer(question: str, documents: list[str]) -> str:
+    """
+    Uses GPT only AFTER retrieval.
+    GPT is strictly grounded in provided context.
+    """
+
+    context = "\n\n".join(documents)
+
+    prompt = f"""
+You are an assistant answering questions based ONLY on the context below.
+If the answer is not clearly supported, say so.
+
+Context:
+{context}
+
+Question:
+{question}
+
+Answer:
+"""
+
+    response = openai_client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[{"role": "user", "content": prompt}],
+        temperature=0
+    )
+
+    return response.choices[0].message.content.strip()
+
+
+# -------------------------
+# Main runner
+# -------------------------
+
+def ask(question: str):
+    documents, metadatas, confidence = retrieve(question)
+
+    print("\n" + "=" * 60)
+    print(f"QUESTION: {question}")
+    print("-" * 60)
+
+    if confidence == "Low" or not documents:
+        print("\nANSWER:")
+        print("⚠️ Not enough reliable information in the documents to answer this question.")
+        print("\nConfidence:", confidence)
+        return
+
+    answer = generate_answer(question, documents)
+
     print("\nANSWER:")
     print(answer)
+    print(f"\nConfidence: ", confidence)
 
-    print("\nSOURCES:")
-    for meta in metadatas:
-        print("-", meta["source"])
 
-    # enumerate() returns both index and value
-    # zip() pairs elements from two lists together
-    # start=1 makes enumerate begin counting at 1 instead of 0
-    for idx, (doc, meta) in enumerate(zip(documents, metadatas), start=1):
-        print(f"\nResult {idx}")
-        # Access nested dictionary: meta is dict, access its 'source' key
-        print(f"Source: {meta['source']}")
-        print("Text preview:")
-        # String slicing: doc[:300] gets first 300 characters
-        print(doc[:300])
+# -------------------------
+# Demo questions
+# -------------------------
+
+if __name__ == "__main__":
+    questions = [
+        "Who has experience with React?",
+        "Who has worked remotely?",
+        "Who has led teams or had leadership responsibilities?"
+    ]
+
+    for q in questions:
+        ask(q)

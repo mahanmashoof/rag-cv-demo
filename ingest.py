@@ -1,52 +1,90 @@
-# Import statements: Bring in external libraries
-import os  # Operating system functions (file/directory operations)
-import chromadb  # Vector database library for semantic search
+import os
+import chromadb
+from openai import OpenAI
 
-# Create a persistent ChromaDB client (saves data to disk)
-chroma = chromadb.PersistentClient(path="./chroma_db")
-# Get or create a collection (like a table in a database)
-collection = chroma.get_or_create_collection(name="cvs")
+# -------------------------------
+# CONFIGURATION (explicit & shared)
+# -------------------------------
 
-# Constants: Variables in UPPERCASE by convention (not truly constant in Python)
-DATA_DIR = "data"
+EMBEDDING_MODEL = "text-embedding-3-small"
+CHROMA_PATH = "./chroma_db"
+COLLECTION_NAME = "cvs"
+DATA_PATH = "./data"   # folder with CV text files
 
-# Function definition: 'def' keyword, followed by function name and parentheses
-def load_cvs():
-    # Initialize an empty list to store documents
-    docs = []
-    # Loop through all files in the DATA_DIR directory
-    for file in os.listdir(DATA_DIR):
-        # Context manager: 'with' ensures file is properly closed after use
-        # os.path.join() creates proper file paths for any OS
-        with open(os.path.join(DATA_DIR, file), "r", encoding="utf-8") as f:
-            # Append a dictionary to the list
-            # Dictionary: key-value pairs enclosed in curly braces {}
-            docs.append({
-                "id": file,  # Dictionary key: value
-                "text": f.read()  # f.read() reads entire file content
-            })
-    # Return statement: sends data back to the caller
-    return docs
+openai_client = OpenAI()
 
-def ingest():
-    # Call the load_cvs function and store result in variable
-    cvs = load_cvs()
+# -------------------------------
+# EMBEDDING FUNCTION
+# -------------------------------
 
-    # Call collection method with named arguments
-    collection.add(
-        # List comprehension: compact way to create lists
-        # [expression for item in iterable]
-        documents=[cv["text"] for cv in cvs],  # Extract 'text' from each CV dict
-        ids=[cv["id"] for cv in cvs],  # Extract 'id' from each CV dict
-        metadatas=[{"source": cv["id"]} for cv in cvs]  # Create new dict for each CV
+def embed_text(text: str) -> list[float]:
+    """
+    Converts text into a numerical vector embedding.
+    This MUST match the embedding used at query time.
+    """
+
+    response = openai_client.embeddings.create(
+        model=EMBEDDING_MODEL,
+        input=text
     )
 
-    # f-string: formatted string literal (prefix with f)
-    # {variable} gets replaced with variable's value
-    # len() returns the number of items in a collection
-    print(f"Ingested {len(cvs)} CVs.")
+    return response.data[0].embedding
 
-# if __name__ == "__main__": ensures code only runs when script is executed directly
-# (not when imported as a module)
+
+# -------------------------------
+# INGESTION LOGIC
+# -------------------------------
+
+def ingest():
+    """
+    Reads CV files, embeds them, and stores them in Chroma.
+    """
+
+    # Persistent Chroma client (disk-backed)
+    chroma = chromadb.PersistentClient(path=CHROMA_PATH)
+
+    # Create or load collection
+    collection = chroma.get_or_create_collection(
+        name=COLLECTION_NAME
+    )
+
+    documents = []
+    metadatas = []
+    embeddings = []
+    ids = []
+
+    # Read all CV files
+    for idx, filename in enumerate(os.listdir(DATA_PATH)):
+        if not filename.endswith(".txt"):
+            continue
+
+        filepath = os.path.join(DATA_PATH, filename)
+
+        with open(filepath, "r", encoding="utf-8") as f:
+            text = f.read().strip()
+
+        # Skip empty files
+        if not text:
+            continue
+
+        # Create embedding
+        embedding = embed_text(text)
+
+        documents.append(text)
+        embeddings.append(embedding)
+        metadatas.append({"source": filename})
+        ids.append(f"cv_{idx}")
+
+    # Store everything in Chroma
+    collection.add(
+        documents=documents,
+        embeddings=embeddings,
+        metadatas=metadatas,
+        ids=ids
+    )
+
+    print(f"Ingested {len(documents)} documents.")
+
+
 if __name__ == "__main__":
     ingest()
