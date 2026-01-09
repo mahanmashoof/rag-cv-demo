@@ -137,11 +137,7 @@ def ask(question: str):
 # -------------------------
 
 if __name__ == "__main__":
-    questions = [
-        "Who has experience with React?",
-        "Who has worked remotely?",
-        "Who has led teams or had leadership responsibilities?"
-    ]
-
-    for q in questions:
+    from api import DEMO_QUESTIONS
+    
+    for q in DEMO_QUESTIONS:
         ask(q)
