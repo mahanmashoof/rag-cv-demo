@@ -9,7 +9,7 @@ export default function App() {
 
   // Fetch questions from backend on mount
   useEffect(() => {
-    fetch("http://localhost:8000/questions")
+    fetch(`${import.meta.env.VITE_BACKEND_URL}/questions`)
       .then((res) => res.json())
       .then((data) => setQuestions(data.questions))
       .catch((err) => console.error("Failed to load questions:", err));
@@ -18,7 +18,7 @@ export default function App() {
   async function ask(question: string) {
     setLoading(true);
     try {
-      const res = await fetch("http://localhost:8000/ask", {
+      const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/ask`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ question }),
