@@ -1,14 +1,17 @@
+import os
+from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from retrieve import retrieve, generate_answer
 
+load_dotenv()
 app = FastAPI()
 
 # Configure CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],  # Frontend URL
+    allow_origins=[os.getenv("FRONTEND_URL")],
     allow_credentials=True,
     allow_methods=["*"],  # Allow all HTTP methods
     allow_headers=["*"],  # Allow all headers
@@ -18,7 +21,7 @@ app.add_middleware(
 DEMO_QUESTIONS = [
     "Who has experience with React?",
     "Who has worked remotely?",
-    "Who has led teams or had leadership responsibilities?",
+    "Who is the most intelligent?",
 ]
 
 class Question(BaseModel):

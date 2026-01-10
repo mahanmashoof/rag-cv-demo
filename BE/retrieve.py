@@ -1,12 +1,16 @@
+import os
 import chromadb
 from openai import OpenAI
 
 # -------------------------
 # Setup
 # -------------------------
+# Get the directory where this script is located
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+
 EMBEDDING_MODEL = "text-embedding-3-small"
 openai_client = OpenAI()
-chroma = chromadb.PersistentClient(path="./chroma_db")
+chroma = chromadb.PersistentClient(path=os.path.join(SCRIPT_DIR, "chroma_db"))
 collection = chroma.get_collection(name="cvs")
 # Confidence thresholds (lower distance = better)
 HIGH_CONFIDENCE = 0.9

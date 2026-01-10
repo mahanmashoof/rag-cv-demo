@@ -6,10 +6,13 @@ from openai import OpenAI
 # CONFIGURATION (explicit & shared)
 # -------------------------------
 
+# Get the directory where this script is located
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+
 EMBEDDING_MODEL = "text-embedding-3-small"
-CHROMA_PATH = "./chroma_db"
+CHROMA_PATH = os.path.join(SCRIPT_DIR, "chroma_db")
 COLLECTION_NAME = "cvs"
-DATA_PATH = "./data"   # folder with CV text files
+DATA_PATH = os.path.join(SCRIPT_DIR, "data")   # folder with CV text files
 
 openai_client = OpenAI()
 
