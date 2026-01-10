@@ -1,12 +1,22 @@
 import os
+from contextlib import asynccontextmanager
 from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
+from ingest import ingest
 from retrieve import retrieve, generate_answer
 
 load_dotenv()
-app = FastAPI()
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup: Run ingestion
+    ingest()
+    yield
+    # Shutdown: Add cleanup code here if needed
+
+app = FastAPI(lifespan=lifespan)
 
 # Configure CORS
 app.add_middleware(
