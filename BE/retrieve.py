@@ -11,10 +11,14 @@ SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 EMBEDDING_MODEL = "text-embedding-3-small"
 openai_client = OpenAI()
 chroma = chromadb.PersistentClient(path=os.path.join(SCRIPT_DIR, "chroma_db"))
-collection = chroma.get_collection(name="cvs")
+
 # Confidence thresholds (lower distance = better)
 HIGH_CONFIDENCE = 0.9
 MEDIUM_CONFIDENCE = 1.1
+
+def get_collection():
+    """Get or create the collection - called when needed, not at module load"""
+    return chroma.get_or_create_collection(name="cvs")
 
 # -------------------------
 # Confidence logic
@@ -63,6 +67,7 @@ def retrieve(question: str, k: int = 3):
     """
 
     query_embedding = embed_text(question)
+    collection = get_collection()
 
     results = collection.query(
         query_embeddings=[query_embedding],
